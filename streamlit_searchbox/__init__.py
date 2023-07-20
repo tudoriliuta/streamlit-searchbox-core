@@ -123,7 +123,7 @@ def st_searchbox(
 
     # everything here is passed to react as this.props.args
     react_state = _get_react_component(
-        options=st.session_state[key]["options"],
+        options=st.session_state[key]["options"] or st.session_state.questions_list_clean,
         clear_on_submit=clear_on_submit,
         placeholder=placeholder,
         label=label,
@@ -133,7 +133,11 @@ def st_searchbox(
     )
 
     if react_state is None:
-        return st.session_state[key]["result"]
+        if 'questions_list_clean' in st.session_state and st.session_state.questions_list_clean:
+            # Simulate imput and execute function
+            react_state = {'interaction': 'search', 'value': st.session_state.questions_list_clean[0]}
+        else:
+            return st.session_state[key]["result"]
 
     interaction, value = react_state["interaction"], react_state["value"]
 
@@ -142,11 +146,22 @@ def st_searchbox(
         _process_search(search_function, key, value)
 
     if interaction == "submit":
-        st.session_state[key]["result"] = (
-            st.session_state[key]["options_real_type"][value]
-            if "options_real_type" in st.session_state[key]
-            else value
-        )
+        try:
+            if "options_real_type" in st.session_state[key]:
+                if st.session_state[key]['options_real_type']:
+                    st.session_state[key]["result"] = st.session_state[key]["options_real_type"][value]
+                else:
+                    # _process_search(search_function, key, None)
+                    if st.session_state.first == 0 and not st.session_state.conversation:
+
+                        if st.session_state.reset_main_input:
+                            st.session_state.reset_main_input = False
+                            st.experimental_rerun()
+                    st.session_state[key]["result"] = None
+            else:
+                st.session_state[key]["result"] = value
+        except IndexError:
+            raise
         return st.session_state[key]["result"]
 
     if interaction == "reset":
