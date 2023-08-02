@@ -1,6 +1,3 @@
-"""
-module for streamlit searchbox component
-"""
 import functools
 import logging
 import os
